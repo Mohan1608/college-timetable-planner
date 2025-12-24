@@ -1,0 +1,338 @@
+<!--
+  ~ Copyright(c) 2021, Developer : Amit Maurya
+  -->
+
+<html lang="en">
+  <head>
+    <meta content="text/html; charset=UTF-8" http-equiv="Content-Type" />
+    <meta content="width=device-width, initial-scale=1" name="viewport" />
+    <title>College Time Table Scheduler</title>
+    <link href="/webjars/bootstrap/css/bootstrap.min.css" rel="stylesheet" />
+    <link href="/webjars/font-awesome/css/all.css" rel="stylesheet" />
+    <link href="css/style.css" rel="stylesheet" />
+  </head>
+  <body>
+    <header class="header">
+      <img alt="Logo" src="assets/pgBRs.jpg" />
+      <div class="header-right">
+        <a class="name" href="http://gcsector9.ac.in/">
+          &nbsp; Government PG College, Sector-9, Gurugram &nbsp;
+        </a>
+      </div>
+    </header>
+    <div class="container">
+      <div
+        aria-atomic="true"
+        aria-live="polite"
+        class="sticky-top d-flex justify-content-center align-items-center"
+      >
+        <div
+          id="notificationPanel"
+          style="position: absolute; top: 0.5rem"
+        ></div>
+      </div>
+      <h1>College time table solver</h1>
+      <p>Generate the optimal schedule for your teachers and students.</p>
+
+      <div style="margin-bottom: 0.5rem">
+        <button class="btn btn-secondary" id="refreshButton" type="button">
+          <span class="fas fa-refresh"></span> Refresh
+        </button>
+        <button class="btn btn-success" id="solveButton" type="button">
+          <span class="fas fa-play"></span> Solve
+        </button>
+        <button class="btn btn-danger" id="stopSolvingButton" type="button">
+          <span class="fas fa-stop"></span> Stop solving
+        </button>
+        <!--    <button type="button" class="float-right btn btn-warning"><span class="fas fa-stop"></span> Terminate</button>-->
+        <span class="score ml-2 align-middle font-weight-bold" id="score"
+          >Score: ?</span
+        >
+
+        <div class="float-right">
+          <ul class="nav nav-pills" id="myTab" role="tablist">
+            <li class="nav-item">
+              <a
+                aria-controls="byRoomPanel"
+                aria-selected="true"
+                class="nav-link active"
+                data-toggle="tab"
+                href="#byRoomPanel"
+                id="byRoomTab"
+                role="tab"
+                >By room</a
+              >
+            </li>
+            <li class="nav-item">
+              <a
+                aria-controls="byTeacher"
+                aria-selected="false"
+                class="nav-link"
+                data-toggle="tab"
+                href="#byTeacher"
+                id="byTeacherTab"
+                role="tab"
+                >By teacher</a
+              >
+            </li>
+            <li class="nav-item">
+              <a
+                aria-controls="byStudentGroup"
+                aria-selected="false"
+                class="nav-link"
+                data-toggle="tab"
+                href="#byStudentGroup"
+                id="byStudentGroupTab"
+                role="tab"
+                >By student group</a
+              >
+            </li>
+          </ul>
+        </div>
+      </div>
+      <div class="tab-content" id="myTabContent">
+        <div
+          aria-labelledby="byRoomTab"
+          class="tab-pane fade show active"
+          id="byRoomPanel"
+          role="tabpanel"
+        >
+          <table
+            class="table table-borderless table-striped timeTableSolution"
+            id="timeTableByRoom"
+          >
+            <!-- Filled in by app.js -->
+          </table>
+        </div>
+        <div
+          aria-labelledby="byTeacherTab"
+          class="tab-pane fade"
+          id="byTeacher"
+          role="tabpanel"
+        >
+          <table
+            class="table table-borderless table-striped timeTableSolution"
+            id="timeTableByTeacher"
+          >
+            <!-- Filled in by app.js -->
+          </table>
+        </div>
+        <div
+          aria-labelledby="byStudentGroupTab"
+          class="tab-pane fade"
+          id="byStudentGroup"
+          role="tabpanel"
+        >
+          <table
+            class="table table-borderless table-striped timeTableSolution"
+            id="timeTableByStudentGroup"
+          >
+            <!-- Filled in by app.js -->
+          </table>
+        </div>
+      </div>
+      <div>
+        <button
+          class="btn btn-primary"
+          data-target="#lessonDialog"
+          data-toggle="modal"
+          type="button"
+        >
+          <span class="fas fa-plus"></span> Add lesson
+        </button>
+        <button
+          class="btn btn-secondary"
+          data-target="#timeslotDialog"
+          data-toggle="modal"
+          type="button"
+        >
+          <span class="fas fa-plus"></span> Add timeslot
+        </button>
+        <button
+          class="btn btn-secondary"
+          data-target="#roomDialog"
+          data-toggle="modal"
+          type="button"
+        >
+          <span class="fas fa-plus"></span> Add room
+        </button>
+      </div>
+
+      <h2 style="margin-top: 2rem">Unassigned lessons</h2>
+      <div class="card-columns" id="unassignedLessons"></div>
+    </div>
+
+    <div class="modal fade" id="lessonDialog" role="dialog" tabindex="-1">
+      <div class="modal-dialog" role="dialog">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h4>Add a lesson</h4>
+            <button class="close" data-dismiss="modal" type="button">
+              <span>&times;</span>
+            </button>
+          </div>
+          <div class="modal-body">
+            <div class="form-group">
+              <label for="lesson_subject">Subject</label>
+              <input
+                class="form-control"
+                id="lesson_subject"
+                required
+                type="text"
+                value="Music"
+              />
+            </div>
+            <div class="form-group">
+              <label for="lesson_teacher">Teacher</label>
+              <input
+                class="form-control"
+                id="lesson_teacher"
+                required
+                type="text"
+                value="B. May"
+              />
+            </div>
+            <div class="form-group">
+              <label for="lesson_studentGroup">Student group</label>
+              <input
+                class="form-control"
+                id="lesson_studentGroup"
+                required
+                type="text"
+                value="11th grade"
+              />
+            </div>
+            <div class="modal-footer">
+              <button
+                class="btn btn-default"
+                data-dismiss="modal"
+                type="button"
+              >
+                Cancel
+              </button>
+              <button
+                class="btn btn-primary"
+                id="addLessonSubmitButton"
+                type="button"
+              >
+                Submit new lesson
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="modal fade" id="timeslotDialog" role="dialog" tabindex="-1">
+      <div class="modal-dialog" role="dialog">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h4>Add a timeslot</h4>
+            <button class="close" data-dismiss="modal" type="button">
+              <span>&times;</span>
+            </button>
+          </div>
+          <div class="modal-body">
+            <div class="form-group">
+              <label for="timeslot_dayOfWeek">Day of week</label>
+              <select class="form-control" id="timeslot_dayOfWeek" required>
+                <option>Monday</option>
+                <option>Tuesday</option>
+                <option selected="selected">Wednesday</option>
+                <option>Thursday</option>
+                <option>Friday</option>
+                <option>Saturday</option>
+                <option>Sunday</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="timeslot_startTime">Start time</label>
+              <input
+                class="form-control"
+                id="timeslot_startTime"
+                required
+                type="time"
+                value="08:30"
+              />
+            </div>
+            <div class="form-group">
+              <label for="timeslot_endTime">End time</label>
+              <input
+                class="form-control"
+                id="timeslot_endTime"
+                required
+                type="time"
+                value="09:30"
+              />
+            </div>
+            <div class="modal-footer">
+              <button
+                class="btn btn-default"
+                data-dismiss="modal"
+                type="button"
+              >
+                Cancel
+              </button>
+              <button
+                class="btn btn-primary"
+                id="addTimeslotSubmitButton"
+                type="button"
+              >
+                Submit new timeslot
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="modal fade" id="roomDialog" role="dialog" tabindex="-1">
+      <div class="modal-dialog" role="dialog">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h4>Add a room</h4>
+            <button class="close" data-dismiss="modal" type="button">
+              <span>&times;</span>
+            </button>
+          </div>
+          <div class="modal-body">
+            <div class="form-group">
+              <label for="room_name">Name</label>
+              <input
+                class="form-control"
+                id="room_name"
+                required
+                type="text"
+                value="Room D"
+              />
+            </div>
+            <div class="modal-footer">
+              <button
+                class="btn btn-default"
+                data-dismiss="modal"
+                type="button"
+              >
+                Cancel
+              </button>
+              <button
+                class="btn btn-primary"
+                id="addRoomSubmitButton"
+                type="button"
+              >
+                Submit new room
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <footer>
+      <br />
+      <p>Developed By: Amit Maurya &copy; 2023<br /></p>
+    </footer>
+
+    <script src="/webjars/jquery/jquery.min.js"></script>
+    <script src="/webjars/bootstrap/js/bootstrap.min.js"></script>
+    <script src="/webjars/momentjs/min/moment.min.js"></script>
+    <script src="js/app.js"></script>
+  </body>
+</html>
