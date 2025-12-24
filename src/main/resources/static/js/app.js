@@ -1,6 +1,80 @@
 var autoRefreshIntervalId = null;
+let currentUserRoles = [];
+
+function hasRole(role) {
+  console.log("Checking role:", role, "against", currentUserRoles);
+  return currentUserRoles.some(r => r === "ROLE_" + role);
+}
+
+function applyRoleBasedUI() {
+
+  // ---------- STUDENT ----------
+  if (isStudent()) {
+
+    // Hide Room & Teacher tabs
+    $("#byRoomTab").hide();
+    $("#byTeacherTab").hide();
+    $("#solveButton").remove();
+
+    // Show only Student Group tab
+    $("#byStudentGroupTab").show();
+
+    // Deactivate others
+    $("#byTeacher").removeClass("show active");
+
+    // Activate Student Group tab + panel
+    $("#byStudentGroupTab").addClass("active");
+    $("#byStudentGroup").addClass("show active");
+    $("#addLessonBtn").remove();
+        $("#addTimeslotBtn").remove();
+        $("#addRoomBtn").remove();
+
+    return; // 🔴 IMPORTANT: stop further execution
+  }
+
+  // ---------- TEACHER ----------
+  if (isTeacher()) {
+  $("#byRoomTab").hide();
+  $("#solveButton").remove();
+
+  $("#byRoomTab").removeClass("show active");
+
+  $("#byTeacherTabTab").addClass("active");
+  $("#byTeacherTab").addClass("show active");
+    $("#byTeacherTab").show();
+    $("#byStudentGroupTab").show();
+
+        $("#addTimeslotBtn").remove();
+        $("#addRoomBtn").remove();
+    return;
+  }
+
+  // ---------- ADMIN ----------
+  if (isAdmin()) {
+    $("#byRoomTab").show();
+    $("#byTeacherTab").show();
+    $("#byStudentGroupTab").show();
+  }
+}
+
+function isAdmin() {
+  return hasRole("ADMIN");
+}
+
+function isTeacher() {
+  return hasRole("TEACHER");
+}
+
+function isStudent() {
+  return hasRole("STUDENT");
+}
 
 function refreshTimeTable() {
+ $("#timetable").empty();        // ⬅ VERY IMPORTANT
+  $("#headerRowByRoom").empty();
+  $("#headerRowByTeacher").empty();
+  $("#headerRowByStudentGroup").empty();
+
   $.getJSON("/timeTable", function (timeTable) {
     refreshSolvingButtons(
       timeTable.solverStatus != null && timeTable.solverStatus !== "NOT_SOLVING"
@@ -22,17 +96,19 @@ function refreshTimeTable() {
     const headerRowByRoom = $("<tr>").appendTo(theadByRoom);
     headerRowByRoom.append($("<th>Timeslot</th>"));
     $.each(timeTable.roomList, (index, room) => {
-      headerRowByRoom.append(
-        $("<th/>")
-          .append($("<span/>").text(room.name))
-          .append(
-            $(
-              `<button type="button" class="ml-2 mb-1 btn btn-light btn-sm p-1"/>`
-            )
-              .append($(`<small class="fas fa-trash"/>`))
-              .click(() => deleteRoom(room))
-          )
+      const th = $("<th/>").append(
+        $("<span/>").text(room.name)
       );
+
+      if (hasRole("ADMIN")) {
+        th.append(
+          $('<button type="button" class="ml-2 mb-1 btn btn-light btn-sm p-1"/>')
+            .append($('<small class="fas fa-trash"/>'))
+            .click(() => deleteRoom(room))
+        );
+      }
+
+      headerRowByRoom.append(th);
     });
     const theadByTeacher = $("<thead>").appendTo(timeTableByTeacher);
     const headerRowByTeacher = $("<tr>").appendTo(theadByTeacher);
@@ -60,11 +136,9 @@ function refreshTimeTable() {
     const tbodyByStudentGroup = $("<tbody>").appendTo(timeTableByStudentGroup);
     $.each(timeTable.timeslotList, (index, timeslot) => {
       const rowByRoom = $("<tr>").appendTo(tbodyByRoom);
-      rowByRoom.append(
-        $(`<th class="align-middle"/>`).append(
+        const thTimeslot = $(`<th class="align-middle"/>`).append(
           $("<span/>")
-            .text(
-              `
+            .text(`
                     ${
                       timeslot.dayOfWeek.charAt(0) +
                       timeslot.dayOfWeek.slice(1).toLowerCase()
@@ -74,15 +148,15 @@ function refreshTimeTable() {
                     ${moment(timeslot.endTime, "HH:mm:ss").format("HH:mm")}
                 `
             )
-            .append(
-              $(
-                `<button type="button" class="ml-2 mb-1 btn btn-light btn-sm p-1"/>`
-              )
-                .append($(`<small class="fas fa-trash"/>`))
-                .click(() => deleteTimeslot(timeslot))
-            )
-        )
-      );
+        );
+        if (isAdmin()) {
+          thTimeslot.append(
+            $('<button class="ml-2 mb-1 btn btn-light btn-sm p-1"/>')
+              .append($('<small class="fas fa-trash"/>'))
+              .click(() => deleteTimeslot(timeslot))
+          );
+        }
+      rowByRoom.append(thTimeslot);
 
       const rowByTeacher = $("<tr>").appendTo(tbodyByTeacher);
       rowByTeacher.append(
@@ -157,13 +231,13 @@ function refreshTimeTable() {
           .append($(`<p class="card-text ml-2"/>`).text(lesson.studentGroup))
       );
       const lessonElement = lessonElementWithoutDelete.clone();
-      lessonElement.find(".card-body").prepend(
-        $(
-          `<button type="button" class="ml-2 btn btn-light btn-sm p-1 float-right"/>`
-        )
-          .append($(`<small class="fas fa-trash"/>`))
-          .click(() => deleteLesson(lesson))
-      );
+      if (isAdmin()) {
+        lessonElement.find(".card-body").prepend(
+          $('<button type="button" class="ml-2 btn btn-light btn-sm p-1 float-right"/>')
+            .append($('<small class="fas fa-trash"/>'))
+            .click(() => deleteLesson(lesson))
+        );
+      }
       if (lesson.timeslot == null || lesson.room == null) {
         unassignedLessons.append(lessonElement);
       } else {
@@ -366,8 +440,12 @@ $(document).ready(function () {
   $("#addRoomSubmitButton").click(function () {
     addRoom();
   });
-
-  refreshTimeTable();
+    // 🔐 NEW: load logged-in user roles
+      $.getJSON("/api/auth/me", function (user) {
+        currentUserRoles = user.roles;
+        applyRoleBasedUI();
+        refreshTimeTable();
+      });
 });
 
 // ****************************************************************************
